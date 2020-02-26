@@ -1,0 +1,2 @@
+## Zasady
+Proszę zachowaj porządek w repozytorium poprzez utrzymanie struktury katalogów w formie kolejnych numerowanych katalogów na każdy meetup oraz prezentacji nazywanych `Imię Nazwisko - tematyka`.

@@ -1,0 +1,693 @@
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>webdev.legnica #1: behat</title>
+		<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+		<link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css?family=Caveat&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css?family=Fira+Code&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/components/icon.min.css">
+
+		<style>
+			html {
+				background: White url("https://www.toptal.com/designers/subtlepatterns/patterns/greyzz.png");
+			}
+
+			div {
+				overflow: hidden;
+			}
+
+			.code {
+				font-family: "Fira Code", monospace;
+			}
+
+			.handwritten {
+				font-family: "Caveat", cursive;
+			}
+
+			.background.top.right.icon {
+				position: absolute;
+				top: 15%;
+				right: 15%;
+				opacity: .05;
+				font-size: 32em !important;
+			}
+
+			.really.huge {
+				font-size: 16em;
+			}
+
+			.slide-enter-active, .slide-leave-active, .subslide-enter-active, .subslide-leave-active {
+				transition: opacity 500ms ease-out, transform 500ms ease-out;
+			}
+
+			.slide-leave-to {
+				opacity: 0;
+				transform: translateY(-50%);
+			}
+
+			.slide-enter {
+				opacity: 0;
+				transform: translateY(50%);
+			}
+
+			.subslide-leave-to {
+				opacity: 0;
+				transform: translateX(-50%);
+			}
+
+			.subslide-enter {
+				opacity: 0;
+				transform: translateX(50%);
+			}
+		</style>
+	</head>
+	<body class="w-full h-full">
+		<div id="presentation" class="w-full h-full flex p-4">
+			<div class="w-1/6 h-full">
+				<div class="w-full text-center text-gray-400">
+					<i class="cursor-pointer hover:text-black large home icon" @click="currentSlideIndex = 0"></i>
+					<i class="cursor-pointer hover:text-black large backward icon" @click="goBack()"></i>
+					<span class="m-1 leading-loose">{{ currentSlideIndex + 1 }} / {{ order.length }}</span>
+					<i class="cursor-pointer hover:text-black large forward icon" @click="goForward()"></i>
+				</div>
+				<ul class="mt-4">
+					<li class="m-1 border-r-2 border-black text-right pr-4 cursor-pointer" v-for="(section, index) in sections"
+							:class="{ 'text-gray-400 border-gray-400': index !== currentSlide[0] }" @click="setCurrentSection(index)">
+						{{ section }}
+					</li>
+				</ul>
+			</div>
+			<div class="w-full h-full">
+				<slide :show="subsection(0, 0)" transition="subslide">
+					<div class="text-4xl handwritten opacity-50">prezentacja webdev.legnica #1</div>
+					<div class="text-6xl mt-32">Wierszyki i ogórki</div>
+					<div class="text-3xl">wstęp do Behata</div>
+					<div class="text-xl mt-32 opacity-50">autor prezentacji</div>
+					<div class="text-3xl handwritten">Krzysztof Rewak</div>
+				</slide>
+				<slide :show="subsection(0, 1)">
+					<div class="text-2xl code opacity-50">
+						whoami
+					</div>
+					<a href="https://github.com/krzysztofrewak" target="_blank" class="text-4xl mt-16 handwritten opacity-50">
+						<i class="large github icon"></i>
+						@krzysztofrewak
+					</a>
+					<a href="https://www.linkedin.com/in/krzysztofrewak/" target="_blank" class="text-4xl mt-8 handwritten opacity-50">
+						<i class="large linkedin icon"></i>
+						Krzysztof Rewak
+					</a>
+				</slide>
+
+				<slide :show="subsection(1, 0)" transition="subslide">
+					<div class="text-5xl handwritten">czy każdy wie czym jest</div>
+					<div class="text-6xl">Test-driven development?</div>
+					<i class="top right background large question circle outline icon"></i>
+				</slide>
+				<slide :show="subsection(1, 1)" transition="subslide">
+					<div class="absolute bottom-0 right-0">
+						<a href="https://www.pctonline.com/article/meet-the-boxelder-bug/">
+							testowanie to niekoniecznie szukanie bugów w kodzie, choć wielu tak myśli
+							<i class="external icon"></i>
+						</a>
+						<img class="mt-16" src="./assets/bug.png" alt="Bug, seriously">
+					</div>
+				</slide>
+				<slide :show="subsection(1, 2)" transition="subslide">
+					<div class="really huge">TDD</div>
+					<div class="text-3xl mx-16 italic">
+						technika tworzenia oprogramowania, zaliczana do metodyk zwinnych (...) wyróżnia się tym, że najpierw programista zaczyna od pisania testów do funkcji, która jeszcze nie została napisana
+						<a href="https://pl.wikipedia.org/wiki/Test-driven_development" target="_blank">
+							<i class="external icon"></i>
+						</a>
+					</div>
+					<i class="top right background large wikipedia w icon"></i>
+				</slide>
+				<slide :show="subsection(1, 3)" transition="subslide">
+					<div class="text-3xl">idea jest prosta</div>
+					<div class="text-3xl handwritten">(choć wdrożenie wymaga odrobiny wytrwałości)</div>
+					<div class="mt-16">
+						<img class="m-auto mb-16 image" src="./assets/tdd.png" alt="TDD schema">
+						autor:
+						<a href="https://medium.com/@sukorenomw/why-tdd-test-driven-development-a1bc983a2cc0">
+							Sukoreno Mukti
+							<i class="external icon"></i>
+						</a>
+					</div>
+				</slide>
+				<slide :show="subsection(1, 4)" transition="subslide">
+					<div class="text-3xl">spójrzmy na ten test:</div>
+					<div class="text-left ml-16 mt-16 text-3xl code"><pre><code>
+public function testNameSlugifier(): void
+{
+    $zoo = new Zoo(["name" => "Zoo Dresden"]);
+    $this->assert("zoo-dresden", $zoo->slugify());
+}
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(1, 5)" transition="subslide">
+					<div class="text-3xl">możemy napisać do niego następujący kod:</div>
+					<div class="text-left ml-16 mt-16 text-3xl code"><pre><code>
+public function slugify(): string
+{
+    return strtolower(str_replace(" ", "-", $this->name));
+}
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(1, 6)" transition="subslide">
+					<div class="text-3xl">może to rozszerzymy?</div>
+					<div class="text-left ml-16 mt-16 text-3xl code"><pre><code>
+public function testGermanNameSlugifier(): void
+{
+    $zoo = new Zoo(["name" => "Tierpark Görlitz"]);
+    $this->assert("tierpark-gorlitz", $zoo->slugify());
+}
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(1, 7)" transition="subslide">
+					<div class="text-3xl">albo jeszcze bardziej?</div>
+					<div class="text-left ml-16 mt-16 text-3xl code"><pre><code>
+public function testUkrainianNameSlugifier(): void
+{
+    $zoo = new Zoo(["name" => "Київський Зоопарк"]);
+    $this->assert("kiivskiy-zoopark", $zoo->slugify());
+}
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(1, 8)">
+					<div class="text-3xl">chyba wyjdzie na to, że skorzystamy z czyjegoś sluggera:</div>
+					<div class="text-left ml-16 mt-16 text-3xl code"><pre><code>
+public function slugify(): string
+{
+    return Str::slug($this->name);
+}
+					</code></pre>
+					</div>
+				</slide>
+
+				<slide :show="subsection(2, 0)" transition="subslide">
+					<div class="text-4xl">przedrostek
+						<span class="text-5xl handwritten">Test-driven</span>
+						jest zatem łatwy do zrozumienia
+					</div>
+					<div class="mt-16 text-5xl">co może zatem oznaczać
+						<span class="text-6xl handwritten">Behaviour-driven</span>
+						?
+					</div>
+					<i class="top right background large question circle outline icon"></i>
+				</slide>
+				<slide :show="subsection(2, 1)" transition="subslide">
+					<div class="really huge">BDD</div>
+					<div class="text-3xl mx-16 italic">
+						proces wytwórczy oprogramowania (...) połączenie wspólnych metod i zasad TDD z cechami procesu domain-driven design w celu dostarczenia wspólnych narzędzi umożliwiających współpracę przy tworzeniu oprogramowania
+						<a href="https://pl.wikipedia.org/wiki/Behavior-driven_development" target="_blank">
+							<i class="external icon"></i>
+						</a>
+					</div>
+					<i class="top right background large wikipedia w icon"></i>
+				</slide>
+				<slide :show="subsection(2, 2)" transition="subslide">
+					<div class="text-3xl">idea jest dalej prosta</div>
+					<div class="text-3xl handwritten">(ale musimy już być psychicznie nastawieni na TDD)</div>
+					<div class="mt-8">
+						<img class="m-auto mb-8 image" src="./assets/bdd.png" alt="BDD schema">
+						autor:
+						<a href="https://blog.kloia.com/cucumber-ile-behaviour-driven-development-bdd-59fa899786fa">
+							Halil Bozan
+							<i class="external icon"></i>
+						</a>
+					</div>
+				</slide>
+				<slide :show="subsection(2, 3)" transition="subslide">
+					<div class="text-4xl">BDD w łączy język specyficzny domeny</div>
+					<div class="mt-12 text-6xl handwritten">z językiem naturalnym</div>
+					<div class="mt-12 text-4xl code">i językiem programowania</div>
+				</slide>
+				<slide :show="subsection(2, 4)" transition="subslide">
+					<div class="text-4xl mx-16">
+						za pomocą zdań rozpoczynających się od
+						<span class="text-5xl handwritten mr-2">it should</span>
+						lub
+						<span class="text-5xl handwritten mr-2">when something happens</span>
+						można opisać praktycznie wszystkie kryteria akceptacji praktycznie każdej biznesowo istotnej funkcjonalności systemu
+						<span class="text-5xl handwritten mr-2"></span>
+					</div>
+				</slide>
+				<slide :show="subsection(2, 5)" transition="subslide">
+					<div class="text-4xl mx-16">
+						za pomocą instrukcji warunkowych, pętli i działań na obiektach można przetestować praktycznie wszystkie funkcjonalności systemu
+					</div>
+					<i class="top right background large code icon"></i>
+				</slide>
+				<slide :show="subsection(2, 6)">
+					<div class="text-xl mb-12">wg Vicotra Farcica w
+						<em>Test-Driven Java Development</em>
+						przede wszystkim należy zastanowić się:
+					</div>
+					<div class="text-5xl handwritten">* od czego zacząć?</div>
+					<div class="text-5xl handwritten">* co i ile testować?</div>
+					<div class="text-5xl handwritten">* jak nazywać testy?</div>
+					<div class="text-5xl handwritten">* jak rozumieć niepowodzenie testu?</div>
+				</slide>
+
+				<slide :show="subsection(3, 0)" transition="subslide">
+					<div class="mt-16">
+						<img class="m-auto mb-8 image" src="./assets/cucumbers.png" alt="Cucumbers, seriously">
+						<a href="http://www.pngall.com/cucumber-png/download/4601">
+							ogórki
+							<i class="external icon"></i>
+						</a>
+					</div>
+				</slide>
+				<slide :show="subsection(3, 1)" transition="subslide">
+					<div class="text-3xl mx-24">
+						stąd też pojawił się Gherkin
+						<span class="text-4xl handwritten">(ogórek, korniszon)</span>
+						, nowy pseudojęzyk pseudoprogramowania, który byłby idealnym pomostem między klientem, analitykami i programistami
+					</div>
+				</slide>
+				<slide :show="subsection(3, 2)" transition="subslide">
+					<div class="text-left mx-48 text-5xl leading-none handwritten">
+						<div class="my-8">I'm guest user & I'm preparing "PATCH" request to "/api/profile" endpoint,</div>
+						<div class="my-8">I would like to receive "401" status code & "You're not authorized for this action" message</div>
+						<div class="my-8">after I send the request</div>
+					</div>
+				</slide>
+				<slide :show="subsection(3, 3)" transition="subslide">
+					<div class="text-4xl mx-48">
+						scenariusz w języku Gherkin opiera się przede wszystkim na trzech słowach kluczowych:
+					</div>
+					<div class="text-6xl my-16">
+						<span class="code">Given</span>
+						,
+						<span class="code">When</span>
+						,
+						<span class="code">Then</span>
+					</div>
+					<div class="text-4xl">
+						(można je uzupełniać spójnikiem
+						<span class="code">And</span>
+						)
+					</div>
+				</slide>
+				<slide :show="subsection(3, 4)" transition="subslide">
+					<div class="text-left ml-16 text-2xl code"><pre><code>
+Scenario: Unauthorized user wants to update its profile
+    Given I am guest user
+    And I am preparing "PATCH" request to "/api/profile" endpoint
+    When I send the request
+    Then I should receive "401" status code
+    And I should receive "You're not authorized for this action" message
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(3, 5)" transition="subslide">
+					<div class="text-left ml-16 text-2xl code"><pre><code>
+Scenario: Checking route aggregation
+  Given there's a route named "Kessel Run" with following planets:
+    | name   |
+    | Formos |
+    | Rion   |
+    | Kessel |
+  Then its planets list should have "3" planets
+  And all of its planets should not be connected as neighbors
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(3, 6)" transition="subslide">
+					<div class="text-left ml-16 text-2xl code"><pre><code>
+Scenario Outline: controlling cucumbers
+  Given there are &lt;start> cucumbers
+  When I eat &lt;eat> cucumbers
+  Then I should have &lt;left> cucumbers
+
+  Examples:
+    | start | eat | left |
+    |  12   |  5  |  7   |
+    |  10   |  5  |  5   |
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(3, 7)">
+					<div class="text-left ml-16 text-2xl code"><pre><code>
+Feature: Multiple site support
+
+  Background:
+    Given a global administrator named "Greg"
+    And a blog named "Greg's anti-tax rants"
+    And a customer named "Wilson"
+    And a blog named "Expensive Therapy" owned by "Wilson"
+
+  Scenario: Wilson posts to his own blog
+    Given I am logged in as Wilson
+    When I try to post to "Expensive Therapy"
+    Then I should see "Your article was published."
+
+  Scenario: Greg posts to a client's blog
+    Given I am logged in as Greg
+    When I try to post to "Expensive Therapy"
+    Then I should see "Your article was published."
+					</code></pre>
+					</div>
+				</slide>
+
+				<slide :show="subsection(4, 0)" transition="subslide">
+					<div class="text-3xl">jeżeli chcemy wykorzystać BDD w PHP, z pomocą może przybyć Behat</div>
+					<div class="my-16">
+						<img class="m-auto mb-8 image" src="./assets/behat.png" alt="Behat logo">
+					</div>
+					<div class="mx-48 text-2xl opacity-75 italic">Behat is an open source Behavior-Driven Development framework for PHP; it is a tool to support you in delivering software that matters through continuous communication, deliberate discovery and test-automation</div>
+				</slide>
+				<slide :show="subsection(4, 1)" transition="subslide">
+					<div class="text-2xl code">composer require --dev behat/behat</div>
+				</slide>
+				<slide :show="subsection(4, 2)" transition="subslide">
+					<div class="text-2xl code">./vendor/bin/behat --init</div>
+				</slide>
+				<slide :show="subsection(4, 3)" transition="subslide">
+					<img class="m-auto mb-8 image" src="./assets/phpstorm.png" alt="PHPStorm files tree">
+				</slide>
+				<slide :show="subsection(4, 4)" transition="subslide">
+					<div class="text-2xl code">./vendor/bin/behat</div>
+					<div class="text-2xl mt-16 code">docker exec -w /application -it application-php ./vendor/bin/behat</div>
+				</slide>
+				<slide :show="subsection(4, 5)">
+					<div class="text-6xl handwritten">i w zasadzie można już pracować</div>
+					<div class="text-5xl mt-16 handwritten opacity-75">(i to bez względu na framework!)</div>
+				</slide>
+
+				<slide :show="subsection(5, 0)" transition="subslide">
+					<div class="text-2xl">praca z Behatem obejmuje w zasadzie dwa rodzaje plików:</div>
+					<div class="text-3xl mt-16">gherkinowe scenariusze pogrupowane w plikach
+						<span class="code">features\*.feature</span>
+					</div>
+					<div class="text-3xl mt-8">pehapowe konteksty w plikach
+						<span class="code">features\bootstrap\*.php</span>
+					</div>
+				</slide>
+				<slide :show="subsection(5, 1)" transition="subslide">
+					<div class="text-2xl mx-16">wróćmy do wcześniej przedstawionego testu; teraz wiemy, że może się on znaleźć w pliku
+						<span class="code">features/geography.feature</span>
+						:
+					</div>
+					<div class="text-left ml-16 my-16 text-2xl code"><pre><code>
+Scenario: Checking route aggregation
+  Given there's a route named "Kessel Run" with following planets:
+    | name   |
+    | Formos |
+    | Rion   |
+    | Kessel |
+  Then its planets list should have "3" planets
+  And all of its planets should not be connected as neighbors
+					</code></pre>
+					</div>
+					<div class="text-2xl">wyraźnie widać, co zostanie przetestowane, ale...
+						<span class="handwritten text-3xl">jak</span>
+						to zostanie przetestowane?
+					</div>
+				</slide>
+				<slide :show="subsection(5, 2)" transition="subslide">
+					<div class="text-left ml-16 mt-16 text-2xl code"><pre><code>
+&lt;?php
+
+declare(strict_types = 1);
+
+use Behat\Behat\Context\Context;
+
+class GeographyContext implements Context
+{
+    protected Route $route;
+
+    /** (...) */
+}
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(5, 3)" transition="subslide">
+					<div class="text-left ml-8 text-2xl code"><pre><code>
+/**
+ * @Given there's a route named :name with following planets:
+ * @param string $name
+ * @param TableNode $table
+ */
+public function thereSARouteNamedWithFollowingPlanets(string $name, TableNode $table): void
+{
+    $this->route = new Route($name);
+    collect($table->getHash())->each(function (array $planet): void {
+        $this->route->addPlanet(new Planet($planet["name"]));
+    });
+}
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(5, 4)" transition="subslide">
+					<div class="text-left ml-8 text-2xl code"><pre><code>
+/**
+ * @Given its planets list should have :number planet
+ * @Given its planets list should have :number planets
+ * @Given its planets list should not have any planets
+ * @param int $number
+ */
+public function itsPlanetsListShouldBe(int $number = 0): void
+{
+    Assert::assertEquals($number, count($this->route->getPlanets()));
+}
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(5, 5)" transition="subslide">
+					<div class="text-left ml-8 text-2xl code"><pre><code>
+/**
+ * @Given all of its planets should not be connected as neighbors
+ */
+public function allOfItsPlanetsShouldNotBeConnectedAsNeighbors(): void
+{
+    collect($this->route->getPlanets())->each(function (Planet $planet) {
+        Assert::assertEmpty($planet->getNeighbours());
+    });
+}
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(5, 6)" transition="subslide">
+					<div class="text-2xl opacity-75">w metodach kontekstu możemy uruchomić co tylko chcemy</div>
+					<div class="text-3xl mt-16"><span class="handwritten">(z doświadczenia wiem, że)</span></div>
+					<div class="text-3xl">najsensowniej jednak będzie używać asercji PHPUnita</div>
+				</slide>
+				<slide :show="subsection(5, 7)" transition="subslide">
+					<div class="text-3xl mx-32">Behat jest oczywiście narzędziem dla PHP i naprawdę wygodną opcją jest zintegrowanie z nim PHPStorma</div>
+					<div class="text-2xl mt-16 mx-32 opacity-75">prawdopodobnie RubyMine daje podobne opcje dla Cucumbera, a Visual Studio dla specflow</div>
+					<i class="top right background large php icon"></i>
+				</slide>
+				<slide :show="subsection(5, 8)" transition="subslide">
+					<div class="text-6xl handwritten">voila!</div>
+					<div class="text-3xl mx-32 px-16 mt-16">możemy już uruchomić testy</div>
+					<div class="text-4xl handwritten opacity-75">i obserwować jak wszystko wywala się na czerwono!</div>
+				</slide>
+				<slide :show="subsection(5, 9)">
+					<div class="text-3xl mx-32 px-16">potem pozostaje nam dopisać funkcjonalności, puścić nowe testy, poprawić funkcjonlaności, dopisać nowe testy...</div>
+					<i class="top right background large refresh icon"></i>
+				</slide>
+
+				<slide :show="subsection(6, 0)" transition="subslide">
+					<div class="text-5xl mx-32 px-16">co zatem można testować Behatem?</div>
+				</slide>
+				<slide :show="subsection(6, 1)" transition="subslide">
+					<div class="my-16">
+						<img class="m-auto w-1/2 image" src="./assets/statemachine.png" alt="State machine">
+						<a href="https://kdoore.gitbooks.io/cs1335/modelingstates_and_events_md.html" target="_blank">
+							<i class="large external icon"></i>
+						</a>
+					</div>
+				</slide>
+				<slide :show="subsection(6, 2)" transition="subslide">
+					<div class="text-left ml-16 text-2xl code"><pre><code>
+Scenario: Employee wants to (illegally) change order status from opened to shipped
+    Given I am an employee user
+    And there's an order with status "opened"
+    When I request to change status to "shipped"
+    Then I should receive "IllegalProductStatusException"
+    And order should has "opened" status
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(6, 3)" transition="subslide">
+					<div class="really huge">API</div>
+					<div class="text-5xl handwritten">(najlepiej REST-owe)</div>
+				</slide>
+				<slide :show="subsection(6, 4)" transition="subslide">
+					<div class="text-left ml-16 text-2xl code"><pre><code>
+Scenario: Unauthorized user wants to update its profile
+    Given I am guest user
+    And I am preparing "PATCH" request to "/api/profile" endpoint
+    When I send the request
+    Then I should receive "401" status code
+    And I should receive "You're not authorized for this action" message
+					</code></pre>
+					</div>
+				</slide>
+				<slide :show="subsection(6, 5)">
+					<div class="text-5xl mx-32">jakąkolwiek inną logikę biznesową</div>
+					<div class="text-2xl mt-16 mx-32 opacity-75">czyli wszystko, czego klient oczekuje od swojej nowej błyszczącej aplikacji</div>
+					<i class="top right background large suitcase icon"></i>
+				</slide>
+
+				<slide :show="subsection(7, 0)" transition="subslide">
+					<div class="text-6xl handwritten">podsumowując</div>
+				</slide>
+				<slide :show="subsection(7, 1)" transition="subslide">
+					<div class="text-4xl mb-16">minusy:</div>
+					<li class="text-3xl m-2">trzeba ogarnąć Gherkina</li>
+					<li class="text-3xl m-2">trzeba zmusić klienta do nowego sposobu komunikacji</li>
+					<li class="text-3xl m-2">trzeba dbać o konteksty testów</li>
+					<i class="top right background red large minus circle icon"></i>
+				</slide>
+				<slide :show="subsection(7, 2)">
+					<div class="text-4xl mb-16">plusy:</div>
+					<li class="text-3xl m-2">wszystko jest przetestowane</li>
+					<li class="text-3xl m-2">wszystko jest udokumentowane</li>
+					<li class="text-3xl m-2">wiemy jak wszystko działa i wszystko działa tak jak chcemy</li>
+					<i class="top right background green large plus circle icon"></i>
+				</slide>
+
+				<slide :show="subsection(8, 0)">
+					<div class="really huge handwritten opacity-75">fin</div>
+				</slide>
+			</div>
+		</div>
+	</body>
+	<script>
+		Vue.component("slide", {
+			props: {
+				show: {
+					type: Boolean,
+					default: false,
+				},
+				transition: {
+					type: String,
+					default: "slide",
+				},
+			},
+			template: '<transition :name="transition" mode="out-in">' +
+				'<div class="w-full h-full flex flex-col justify-center content-center text-center" v-if="show">' +
+				'<slot></slot>' +
+				'</div>' +
+				'</transition>',
+		})
+
+		new Vue({
+			el: "#presentation",
+			data() {
+				return {
+					sections: [
+						"Wprowadzenie",
+						"Test-driven development",
+						"Behaviour-driven development",
+						"Język gherkin",
+						"Behat: Wstęp",
+						"Behat: Implementacja",
+						"Behat: Przypadki użycia",
+						"Podsumowanie",
+					],
+					currentSlideIndex: 0,
+					order: [
+						[0, 0],
+						[0, 1],
+						[1, 0],
+						[1, 1],
+						[1, 2],
+						[1, 3],
+						[1, 4],
+						[1, 5],
+						[1, 6],
+						[1, 7],
+						[1, 8],
+						[2, 0],
+						[2, 1],
+						[2, 2],
+						[2, 3],
+						[2, 4],
+						[2, 5],
+						[2, 6],
+						[3, 0],
+						[3, 1],
+						[3, 2],
+						[3, 3],
+						[3, 4],
+						[3, 5],
+						[3, 6],
+						[3, 7],
+						[4, 0],
+						[4, 1],
+						[4, 2],
+						[4, 3],
+						[4, 4],
+						[4, 5],
+						[5, 0],
+						[5, 1],
+						[5, 2],
+						[5, 3],
+						[5, 4],
+						[5, 5],
+						[5, 6],
+						[5, 7],
+						[5, 8],
+						[5, 9],
+						[6, 0],
+						[6, 1],
+						[6, 2],
+						[6, 3],
+						[6, 4],
+						[6, 5],
+						[7, 0],
+						[7, 1],
+						[7, 2],
+						[8, 0],
+					],
+				}
+			},
+			computed: {
+				currentSlide() {
+					return this.order[this.currentSlideIndex]
+				},
+			},
+			mounted() {
+				window.addEventListener("keyup", event => {
+					if(event.key === " " || event.key === "ArrowRight") {
+						this.goForward()
+					}
+					if(event.key === "ArrowLeft") {
+						this.goBack()
+					}
+					if(event.key === "Home") {
+						this.currentSlideIndex = 0
+					}
+				})
+			},
+			methods: {
+				setCurrentSection(index) {
+					for(i = 0; i < this.order.length; i++) {
+						if(this.order[i][0] === index) {
+							break
+						}
+					}
+					this.currentSlideIndex = i
+				},
+				subsection(a, b) {
+					return this.currentSlide[0] === a && this.currentSlide[1] === b
+				},
+				goForward() {
+					this.currentSlideIndex++
+				},
+				goBack() {
+					this.currentSlideIndex--
+				},
+			},
+		})
+	</script>
+</html>
